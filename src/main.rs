@@ -12,9 +12,6 @@ use crossterm::{
 };
 use futures_util::StreamExt;
 
-#[cfg(target_os = "linux")]
-use gio::prelude::SettingsExt;
-
 use indicatif::{ProgressBar, ProgressStyle};
 use ratatui::{
     backend::CrosstermBackend,
@@ -308,13 +305,20 @@ fn color_scheme() -> ColorScheme {
 
     // Try to detect GNOME color scheme as a fallback (works for many Linux
     // distros)
-    let settings = gio::Settings::new("org.gnome.desktop.interface");
-    let scheme: String = settings.string("color-scheme").to_string();
-    if scheme.contains("dark") {
-        ColorScheme::Dark
-    } else {
-        ColorScheme::Light
+    if let Ok(output) = Command::new("gsettings")
+        .args(["get", "org.gnome.desktop.interface", "color-scheme"])
+        .output()
+    {
+        if output.status.success()
+            && String::from_utf8_lossy(&output.stdout)
+                .to_lowercase()
+                .contains("dark")
+        {
+            return ColorScheme::Dark;
+        }
     }
+
+    ColorScheme::Light
 }
 
 /// State machine for streaming markdown rendering
