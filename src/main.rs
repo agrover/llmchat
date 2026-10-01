@@ -511,10 +511,7 @@ async fn main() -> Result<()> {
         .endpoint
         .or(app_config.endpoint)
         .or_else(|| Some("http://localhost:1234/v1".to_string()));
-    args.model = args
-        .model
-        .or(app_config.model)
-        .or_else(|| Some("local-model".to_string()));
+    args.model = args.model.or(app_config.model);
     args.temperature = args.temperature.or(app_config.temperature).or(Some(1.0));
     args.seed = args.seed.or(app_config.seed);
     args.max_tokens = args.max_tokens.or(app_config.max_tokens).or(Some(8192));
@@ -522,6 +519,29 @@ async fn main() -> Result<()> {
         .api_key
         .or(app_config.api_key)
         .or_else(|| env::var("LLMCHAT_API_KEY").ok());
+
+    // No model specified (neither CLI nor config): ask the endpoint for its
+    // model list and use what it serves.
+    if args.model.is_none() {
+        if let Some(endpoint) = &args.endpoint {
+            match fetch_default_model(endpoint, args.api_key.as_deref()).await {
+                Some(model) => {
+                    eprintln!(
+                        "{}",
+                        format!("Auto-selected model: {}", model).dimmed()
+                    );
+                    args.model = Some(model);
+                }
+                None => {
+                    eprintln!(
+                        "{}",
+                        "No --model given and no models found at the endpoint. Use /model <name> to set one."
+                            .yellow()
+                    );
+                }
+            }
+        }
+    }
 
     // Try to auto-detect context window from model info
     if let (Some(endpoint), Some(model)) = (&args.endpoint, &args.model) {
@@ -799,6 +819,28 @@ async fn validate_model(endpoint: &str, model: &str, api_key: Option<&str>) -> O
         Ok(models) if !models.is_empty() => Some(models.iter().any(|m| m == model)),
         _ => None,
     }
+}
+
+// Best-effort: no model was configured, so ask the endpoint what it serves and
+// pick one (the only one listed, or the first alphabetically). Returns None if
+// the model list cannot be fetched or is empty.
+async fn fetch_default_model(endpoint: &str, api_key: Option<&str>) -> Option<String> {
+    let models = list_models(endpoint, api_key).await.ok()?;
+    if models.is_empty() {
+        return None;
+    }
+    if models.len() > 1 {
+        eprintln!(
+            "{}",
+            format!(
+                "Note: Endpoint serves {} models; using '{}' (use --model or /model to select).",
+                models.len(),
+                models[0]
+            )
+            .dimmed()
+        );
+    }
+    models.into_iter().next()
 }
 
 fn open_internal_editor() -> Result<String> {
@@ -1451,7 +1493,7 @@ async fn run_benchmark(benchmark_file: &PathBuf, args: &Args) -> Result<()> {
     );
     println!(
         "Model: {} | Temperature: {} | Seed: {}",
-        args.model.as_deref().unwrap_or("local-model").cyan(),
+        args.model.as_deref().unwrap_or("(none)").cyan(),
         benchmark.temperature.to_string().cyan(),
         benchmark
             .seed
