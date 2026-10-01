@@ -159,7 +159,7 @@ fn history_path() -> PathBuf {
 fn load_config() -> AppConfig {
     let path = config_path();
     match fs::read_to_string(&path) {
-        Ok(data) => match serde_yaml::from_str(&data) {
+        Ok(data) => match noyalib::from_str(&data) {
             Ok(cfg) => cfg,
             Err(e) => {
                 eprintln!(
@@ -178,7 +178,7 @@ fn save_config(cfg: &AppConfig) -> Result<()> {
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent)?;
     }
-    let data = serde_yaml::to_string(cfg)?;
+    let data = noyalib::to_string(cfg)?;
     fs::write(&path, data)?;
     #[cfg(unix)]
     {
@@ -1441,7 +1441,7 @@ async fn handle_prompt(
 
 async fn run_benchmark(benchmark_file: &PathBuf, args: &Args) -> Result<()> {
     let yaml_content = fs::read_to_string(benchmark_file)?;
-    let benchmark: BenchmarkConfig = serde_yaml::from_str(&yaml_content)?;
+    let benchmark: BenchmarkConfig = noyalib::from_str(&yaml_content)?;
 
     println!(
         "{}",
@@ -1626,7 +1626,7 @@ fn display_benchmark_results(
     println!("{}", "━".repeat(80).green());
 
     let mut table = Table::new();
-    table.load_preset(UTF8_FULL);
+    table.load_style(UTF8_FULL);
     table.set_header(vec!["#", "TTFT", "Time", "Tokens", "Speed", "Len", "Hash"]);
 
     for (idx, m) in metrics.iter().enumerate() {

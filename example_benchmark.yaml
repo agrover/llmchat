@@ -26,12 +26,12 @@ prompts:
   - "How do I fix my computer?"
   - "Explain the problem with my code."
   - "Is this safe?"
-  - "John has 3 apples.
   - |
+    John has 3 apples.
     Mary gives John 2 apples.
     John eats 4 apples.
     Mary gives him 5 apples.
-    How many apples does John have now?"
+    How many apples does John have now?
   - "Explain async/await in 2 sentences"
   - "Write a hello world in Python"
   - "What are the benefits of static typing?"

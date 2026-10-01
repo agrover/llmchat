@@ -6,26 +6,29 @@ edition = "2021"
 [dependencies]
 atty = "0.2"
 anyhow = "1"
-reqwest = { version = "0.11", features = ["json", "stream"] }
+reqwest = { version = "0.13", features = ["json", "stream"] }
+# NOTE: ratatui 0.29 / crossterm 0.28 / rustyline 17 are pinned to the versions
+# tui-textarea 0.7 is compatible with (its ratatui/crossterm features are stuck
+# at those versions; upstream has not released support for newer ratatui).
 rustyline = "17"
 tokio = { version = "1", features = ["full"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-serde_yaml = "0.9"
+noyalib = "0.0.51"
 clap = { version = "4", features = ["derive"] }
 tempfile = "3"
 futures-util = "0.3"
-colored = "2"
-indicatif = "0.17"
+colored = "3"
+indicatif = "0.18"
 syntect = "5"
 ratatui = "0.29"
 crossterm = "0.28"
 tui-textarea = "0.7"
-sha2 = "0.10"
+sha2 = "0.11"
 hex = "0.4"
-comfy-table = "7"
+comfy-table = "8"
 chrono = "0.4"
 termbg = "0.6.2"
 
 [target.'cfg(target_os = "macos")'.dependencies]
-macmon = "0.7"
+macmon = "0.8"
